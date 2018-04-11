@@ -1,0 +1,24 @@
+{
+  "name": "steem-resteem-analytics",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "start": "next start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.17.5",
+    "next": "^5.1.0",
+    "prop-types": "^15.6.1",
+    "react": "^16.3.1",
+    "react-dom": "^16.3.1",
+    "semantic-ui-react": "^0.79.1",
+    "steem": "^0.7.1"
+  },
+  "alias": "resteem.review"
+}
