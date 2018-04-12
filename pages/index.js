@@ -88,7 +88,7 @@ export class Demo extends Component {
     this.fetch(author)
   }
 
-  onPageChange = page => () => {
+  onPageChange = currentPage => () => {
     this.setState({
       currentPage,
     })

@@ -7,7 +7,7 @@
     "dev": "next",
     "build": "next build",
     "start": "next start",
-    "publish": "now && now alias"
+    "now": "now && now alias"
   },
   "keywords": [],
   "author": "",
