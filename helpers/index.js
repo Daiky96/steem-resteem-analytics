@@ -46,3 +46,17 @@ export const getBlog = async (author, limit = 50) => {
 }
 
 export const busify = (author, permlink) => `https://busy.org/@${author}/${permlink}`;
+
+export const calculateVote = post => {
+  const totalPayout =
+      parseFloat(post.pending_payout_value) +
+      parseFloat(post.total_payout_value) +
+      parseFloat(post.curator_payout_value);
+
+  const voteRshares = post.active_votes.reduce((a, b) => a + parseFloat(b.rshares), 0);
+  const ratio = totalPayout / voteRshares;
+
+  return Object.assign({}, post, {
+    ratio,
+  })
+}

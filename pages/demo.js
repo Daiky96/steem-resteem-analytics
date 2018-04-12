@@ -3,9 +3,9 @@ import Head from 'next/head'
 import Router from 'next/router'
 import steem from 'steem'
 import _ from 'lodash'
-import { Container, Input, Table, Form, Loader, Menu, Icon, Message } from 'semantic-ui-react'
+import { Container, Input, Table, Form, Loader, Menu, Icon, Message, Statistic } from 'semantic-ui-react'
 
-import { getBlog, getFollower, busify, getAccount } from '../helpers';
+import { getBlog, getFollower, busify, getAccount, calculateVote } from '../helpers';
 
 export default class Demo extends Component {
   constructor(props) {
@@ -43,18 +43,26 @@ export default class Demo extends Component {
       getFollower(author),
       getBlog(author)
     ]).then(([ account, followers, posts ]) => {
-      const reposts = _.orderBy(posts.filter(post => post.author !== author), [post => new Date(post.created)], ['desc'])
+      console.log(posts[0])
+      console.log(posts[posts.length - 1])
+      const reposts = posts
+        .filter(post => post.author !== author)
+        .map(calculateVote)
+
+      followers = followers.concat(author)
       const data = reposts.map(post => {
-        const voters = post.active_votes.map(v => v.voter)
-        const count = voters.filter(voter => followers.includes(voter)).length
+        const voters = post.active_votes.filter(voter => followers.includes(voter.voter))
+        const income = _.round(_.sum(voters.map(v => parseFloat(v.rshares * post.ratio))), 2)
+        const count = voters.length
         const total = post.active_votes.length
 
-        return {
+        return Object.assign({}, {
           url: busify(post.author, post.permlink),
           total,
           count,
-          percent: _.round((100 * count) / total, 2)
-        }
+          percent: _.round((100 * count) / total, 2),
+          income,
+        })
       })
 
       this.setState({
@@ -93,7 +101,7 @@ export default class Demo extends Component {
   }
 
   render() {
-    const { account, data, author, fetching, currentPage, error } = this.state
+    const { followers, account, data, author, fetching, currentPage, error } = this.state
     const pages = _.chunk(data, 100)
     console.log(account)
 
@@ -112,61 +120,94 @@ export default class Demo extends Component {
               <Message.Header>{error}</Message.Header>
             </Message>
           )}
-          {!error && (fetching || !pages.length) ? (
+          {fetching && (
             <Loader active />
-          ) : (
-            <Table sortable>
-              <Table.Header>
-                <Table.Row>
-                  <Table.HeaderCell>Post</Table.HeaderCell>
-                  <Table.HeaderCell>Total</Table.HeaderCell>
-                  <Table.HeaderCell>Upvotes</Table.HeaderCell>
-                  <Table.HeaderCell>Percent</Table.HeaderCell>
-                </Table.Row>
-              </Table.Header>
+          )}
+          {(pages.length >= 1) && !fetching && (
+            <Fragment>
+              <Statistic.Group widths='four'>
+                <Statistic>
+                  <Statistic.Value text>{followers.length}</Statistic.Value>
+                  <Statistic.Label>Followers</Statistic.Label>
+                </Statistic>
 
-              <Table.Body>
-                {pages[currentPage].map(row => (
-                  <Table.Row key={row.url}>
-                    <Table.Cell><a href={row.url} target="_blank">{row.url}</a></Table.Cell>
-                    <Table.Cell textAlign='right'>{row.total}</Table.Cell>
-                    <Table.Cell textAlign='right'>{row.count}</Table.Cell>
-                    <Table.Cell
-                      positive={row.percent > 50}
-                      warning={row.percent < 50 && row.percent > 10}
-                      error={row.percent < 10}
-                      textAlign='right'
-                    >
-                      {row.percent} %
-                    </Table.Cell>
+                <Statistic>
+                  <Statistic.Value text>
+                    {parseInt(_.meanBy(data, 'count')).toLocaleString()}
+                  </Statistic.Value>
+                  <Statistic.Label>Average upvotes</Statistic.Label>
+                </Statistic>
+
+                <Statistic>
+                  <Statistic.Value text>
+                    {data.length}
+                  </Statistic.Value>
+                  <Statistic.Label>Resteemed Posts</Statistic.Label>
+                </Statistic>
+
+                <Statistic>
+                  <Statistic.Value text>
+                    {parseInt(_.sumBy(data, 'count')).toLocaleString()}
+                  </Statistic.Value>
+                  <Statistic.Label>Total upvotes of followers</Statistic.Label>
+                </Statistic>
+              </Statistic.Group>
+
+              <Table sortable>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.HeaderCell>Post</Table.HeaderCell>
+                    <Table.HeaderCell>Total</Table.HeaderCell>
+                    <Table.HeaderCell>Upvotes</Table.HeaderCell>
+                    <Table.HeaderCell>Income</Table.HeaderCell>
+                    <Table.HeaderCell>Percent</Table.HeaderCell>
                   </Table.Row>
-                ))}
-              </Table.Body>
+                </Table.Header>
 
-              <Table.Footer>
-                <Table.Row>
-                  <Table.HeaderCell colSpan='3'>
-                    <Menu floated='right' pagination>
-                      <Menu.Item icon onClick={this.onPageChange(currentPage - 1)}>
-                        <Icon name='chevron left' />
-                      </Menu.Item>
-                      {pages.map((page, i) => (
-                        <Menu.Item
-                          key={i}
-                          onClick={this.onPageChange(i)}
-                          active={currentPage === i}
-                        >
-                          {i + 1}
+                <Table.Body>
+                  {pages[currentPage].map(row => (
+                    <Table.Row key={row.url}>
+                      <Table.Cell><a href={row.url} target="_blank">{row.url}</a></Table.Cell>
+                      <Table.Cell textAlign='right'>{row.total}</Table.Cell>
+                      <Table.Cell textAlign='right'>{row.count}</Table.Cell>
+                      <Table.Cell textAlign='right'>{row.income.toLocaleString()} $</Table.Cell>
+                      <Table.Cell
+                        positive={row.percent > 50}
+                        warning={row.percent < 50 && row.percent > 10}
+                        error={row.percent < 10}
+                        textAlign='right'
+                      >
+                        {row.percent} %
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+
+                <Table.Footer>
+                  <Table.Row>
+                    <Table.HeaderCell colSpan='3'>
+                      <Menu floated='right' pagination>
+                        <Menu.Item icon onClick={this.onPageChange(currentPage - 1)}>
+                          <Icon name='chevron left' />
                         </Menu.Item>
-                      ))}
-                      <Menu.Item icon onClick={this.onPageChange(currentPage + 1)}>
-                        <Icon name='chevron right' />
-                      </Menu.Item>
-                    </Menu>
-                  </Table.HeaderCell>
-                </Table.Row>
-              </Table.Footer>
-            </Table>
+                        {pages.map((page, i) => (
+                          <Menu.Item
+                            key={i}
+                            onClick={this.onPageChange(i)}
+                            active={currentPage === i}
+                          >
+                            {i + 1}
+                          </Menu.Item>
+                        ))}
+                        <Menu.Item icon onClick={this.onPageChange(currentPage + 1)}>
+                          <Icon name='chevron right' />
+                        </Menu.Item>
+                      </Menu>
+                    </Table.HeaderCell>
+                  </Table.Row>
+                </Table.Footer>
+              </Table>
+            </Fragment>
           )}
         </Container>
       </Fragment>
