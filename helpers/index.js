@@ -27,7 +27,7 @@ export const getBlog = async (author, limit = 50) => {
   let keepGoing = true;
 
   do {
-    const last = cache.reverse().find(post => post.author !== author);
+    const last = _.findLast(cache, post => post.author !== author);
     const query = _.omitBy({
       tag: author,
       limit,
@@ -37,7 +37,7 @@ export const getBlog = async (author, limit = 50) => {
 
     const result = await steem.api.getDiscussionsByBlogAsync(query);
     cache = cache.concat(result);
-    if (result.length !== limit) {
+    if ((result.length !== limit) || cache.length >= 500) {
       keepGoing = false;
     }
   } while (keepGoing);
