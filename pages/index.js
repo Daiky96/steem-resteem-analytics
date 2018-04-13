@@ -8,7 +8,7 @@ import { Container, Input, Table, Form, Loader, Menu, Icon, Message, Statistic, 
 import ReactGA from 'react-ga'
 
 import Navigation from '../components/Navigation'
-import { getBlog, getFollower, busify, getAccount, calculateVote } from '../helpers';
+import { getBlog, getFollower, steemify, getAccount, calculateVote } from '../helpers';
 import postStore from '../stores/posts'
 
 
@@ -30,6 +30,7 @@ export class Demo extends Component {
   }
 
   componentDidMount() {
+    ReactGA.initialize('UA-117490646-1')
     ReactGA.pageview(window.location.pathname)
     const { author } = this.state
     postStore.fetchPosts(author)
@@ -59,10 +60,10 @@ export class Demo extends Component {
         const total = post.active_votes.length
 
         return Object.assign({}, {
-          url: busify(post.author, post.permlink),
+          url: steemify(post.author, post.permlink),
           total,
           count,
-          percent: _.round((100 * count) / total, 2),
+          percent: parseInt((100 * count) / total),
           income,
         })
       })
@@ -140,8 +141,15 @@ export class Demo extends Component {
                     <Grid.Column width={2} textAlign="center">
                       <Image src={JSON.parse(account.json_metadata).profile.profile_image} size='medium' rounded />
                     </Grid.Column>
-                    <Grid.Column width={14}>
-                      <Statistic.Group widths='three'>
+                    <Grid.Column width={14} verticalAlign="middle">
+                      <Statistic.Group widths='four'>
+                        <Statistic>
+                          <Statistic.Value text>
+                            {new Date(account.created).toLocaleDateString()}
+                          </Statistic.Value>
+                          <Statistic.Label>Created at</Statistic.Label>
+                        </Statistic>
+
                         <Statistic>
                           <Statistic.Value text>
                             {parseInt(_.meanBy(data, 'count')).toLocaleString()}
@@ -151,16 +159,16 @@ export class Demo extends Component {
 
                         <Statistic>
                           <Statistic.Value text>
-                            {data.length > 1000 ? '500+' : data.length}
+                            {data.length >= 500 ? '500+' : data.length}
                           </Statistic.Value>
                           <Statistic.Label>Resteemed Posts</Statistic.Label>
                         </Statistic>
 
                         <Statistic>
                           <Statistic.Value text>
-                            {parseInt(_.sumBy(data, 'count')).toLocaleString()}
+                            {steem.formatter.reputation(account.reputation)}
                           </Statistic.Value>
-                          <Statistic.Label>Total upvotes of followers</Statistic.Label>
+                          <Statistic.Label>Reputation</Statistic.Label>
                         </Statistic>
                       </Statistic.Group>
                     </Grid.Column>
@@ -168,15 +176,15 @@ export class Demo extends Component {
                 </Grid>
               </Segment>
 
-              <Message attached='top' header={`Resteemed (${data.length})`} />
+              <Message attached='top' header="Posts" />
               <Table attached>
                 <Table.Header>
                   <Table.Row>
                     <Table.HeaderCell>Url</Table.HeaderCell>
-                    <Table.HeaderCell>Total upvotes</Table.HeaderCell>
-                    <Table.HeaderCell>Upvotes of followers</Table.HeaderCell>
-                    <Table.HeaderCell>Income of followers</Table.HeaderCell>
-                    <Table.HeaderCell>Percent</Table.HeaderCell>
+                    <Table.HeaderCell>Upvotes</Table.HeaderCell>
+                    <Table.HeaderCell>Follower upvotes</Table.HeaderCell>
+                    <Table.HeaderCell>Income from followers</Table.HeaderCell>
+                    <Table.HeaderCell>Percentage (upvotes)</Table.HeaderCell>
                   </Table.Row>
                 </Table.Header>
 
@@ -186,11 +194,11 @@ export class Demo extends Component {
                       <Table.Cell><a href={row.url} target="_blank">{row.url}</a></Table.Cell>
                       <Table.Cell textAlign='right'>{row.total}</Table.Cell>
                       <Table.Cell textAlign='right'>{row.count}</Table.Cell>
-                      <Table.Cell textAlign='right'>{row.income.toLocaleString()} $</Table.Cell>
+                      <Table.Cell textAlign='right'>{steem.formatter.amount(row.income, 'SBD')}</Table.Cell>
                       <Table.Cell
-                        positive={row.percent > 50}
-                        warning={row.percent < 50 && row.percent > 10}
-                        error={row.percent < 10}
+                        positive={row.percent >= 40}
+                        warning={row.percent < 40 && row.percent >= 15}
+                        error={row.percent < 15}
                         textAlign='right'
                       >
                         {row.percent} %
@@ -199,29 +207,35 @@ export class Demo extends Component {
                   ))}
                 </Table.Body>
 
-                <Table.Footer>
-                  <Table.Row>
-                    <Table.HeaderCell colSpan='5'>
-                      <Menu floated='right' pagination>
-                        <Menu.Item icon onClick={this.onPageChange(currentPage - 1)}>
-                          <Icon name='chevron left' />
-                        </Menu.Item>
-                        {pages.map((page, i) => (
-                          <Menu.Item
-                            key={i}
-                            onClick={this.onPageChange(i)}
-                            active={currentPage === i}
-                          >
-                            {i + 1}
-                          </Menu.Item>
-                        ))}
-                        <Menu.Item icon onClick={this.onPageChange(currentPage + 1)}>
-                          <Icon name='chevron right' />
-                        </Menu.Item>
-                      </Menu>
-                    </Table.HeaderCell>
-                  </Table.Row>
-                </Table.Footer>
+                {pages.length > 1 && (
+                  <Table.Footer>
+                    <Table.Row>
+                      <Table.HeaderCell colSpan='5'>
+                        <Menu floated='right' pagination>
+                          {currentPage > 0 && (
+                            <Menu.Item icon onClick={this.onPageChange(currentPage - 1)}>
+                              <Icon name='chevron left' />
+                            </Menu.Item>
+                          )}
+                          {pages.map((page, i) => (
+                            <Menu.Item
+                              key={i}
+                              onClick={this.onPageChange(i)}
+                              active={currentPage === i}
+                            >
+                              {i + 1}
+                            </Menu.Item>
+                          ))}
+                          {currentPage < pages.length && (
+                            <Menu.Item icon onClick={this.onPageChange(currentPage + 1)}>
+                              <Icon name='chevron right' />
+                            </Menu.Item>
+                          )}
+                        </Menu>
+                      </Table.HeaderCell>
+                    </Table.Row>
+                  </Table.Footer>
+                )}
               </Table>
             </Fragment>
           )}

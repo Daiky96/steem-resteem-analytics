@@ -1,8 +1,5 @@
 import Document, { Head, Main, NextScript } from 'next/document'
 import { Container } from 'semantic-ui-react'
-import ReactGA from 'react-ga'
-
-ReactGA.initialize('UA-117490646-1')
 
 export class RootDocument extends Document {
   render() {
@@ -35,7 +32,7 @@ export class RootDocument extends Document {
           <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.12/semantic.min.css"></link>
         </Head>
         <body>
-          <Container>
+          <Container style={{ marginBottom: '40px' }}>
             <Main />
             <NextScript />
           </Container>
