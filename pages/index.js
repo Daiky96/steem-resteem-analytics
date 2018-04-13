@@ -194,7 +194,7 @@ export class Demo extends Component {
                       <Table.Cell><a href={row.url} target="_blank">{row.url}</a></Table.Cell>
                       <Table.Cell textAlign='right'>{row.total}</Table.Cell>
                       <Table.Cell textAlign='right'>{row.count}</Table.Cell>
-                      <Table.Cell textAlign='right'>{steem.formatter.amount(row.income, 'SBD')}</Table.Cell>
+                      <Table.Cell textAlign='right'>{row.income.toFixed(3)} $</Table.Cell>
                       <Table.Cell
                         positive={row.percent >= 40}
                         warning={row.percent < 40 && row.percent >= 15}
