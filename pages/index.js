@@ -20,7 +20,7 @@ export class Demo extends Component {
       account: null,
       followers: [],
       posts: [],
-      author: 'fel1xw',
+      author: props.url.query.author || 'fel1xw',
       fetching: false,
       reposts: [],
       data: [],
@@ -106,6 +106,11 @@ export class Demo extends Component {
   updateAuthor = author => {
     this.setState({
       author,
+    })
+
+    Router.push({
+      pathname: window.location.pathname,
+      query: { author }
     })
   }
 
