@@ -103,8 +103,6 @@ export class Demo extends Component {
   render() {
     const { followers, account, data, author, fetching, currentPage, error } = this.state
     const pages = _.chunk(data, 100)
-    console.log(account)
-    console.log('posts', postStore.posts.length)
 
     return (
       <Fragment>

@@ -5,7 +5,7 @@ const Navigation = ({ account, onAccountChange, onSubmit }) => (
     <Menu.Item header>Resteem.review</Menu.Item>
     <Menu.Item name="Analyze your favorite resteem service" disabled />
     <Menu.Item position='right'>
-      <Form onSubmit={onSubmit} widths="one">
+      <Form onSubmit={onSubmit}>
         <Input
           action={{ type: 'submit', content: 'Go', onClick: onSubmit }}
           placeholder='Steem account name'
