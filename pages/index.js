@@ -5,6 +5,7 @@ import Router from 'next/router'
 import steem from 'steem'
 import _ from 'lodash'
 import { Container, Input, Table, Form, Loader, Menu, Icon, Message, Statistic, Segment, Image, Grid } from 'semantic-ui-react'
+import ReactGA from 'react-ga'
 
 import Navigation from '../components/Navigation'
 import { getBlog, getFollower, busify, getAccount, calculateVote } from '../helpers';
@@ -29,6 +30,7 @@ export class Demo extends Component {
   }
 
   componentDidMount() {
+    ReactGA.pageview(window.location.pathname)
     const { author } = this.state
     postStore.fetchPosts(author)
     this.fetch(author)
@@ -84,6 +86,12 @@ export class Demo extends Component {
 
   onSubmit = () => {
     const { author } = this.state
+
+    ReactGA.event({
+      category: 'User',
+      action: 'Search for account',
+      label: author,
+    })
 
     this.fetch(author)
   }
